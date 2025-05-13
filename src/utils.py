@@ -6,7 +6,7 @@ from typing import Optional, Any, Type
 from pydantic import BaseModel
 from langchain.chat_models import init_chat_model
 from langchain_community.vectorstores import FAISS
-from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain_aws import ChatBedrock, ChatBedrockConverse
 from langchain_anthropic import ChatAnthropic
 from pathlib import Path
@@ -20,16 +20,19 @@ from botocore.exceptions import ClientError
 import shutil
 from config import Config
 from langchain_ollama import ChatOllama
+from langchain_deepseek.chat_models import ChatDeepSeek
 
 # Global dictionary to store loaded FAISS databases
 FAISS_DB_CACHE = {}
 DATABASE_DIR = f"{Path(__file__).resolve().parent.parent}/database/faiss"
 
+embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434")
+
 FAISS_DB_CACHE = {
-    "openfoam_allrun_scripts": FAISS.load_local(f"{DATABASE_DIR}/openfoam_allrun_scripts", OpenAIEmbeddings(model="text-embedding-3-small"), allow_dangerous_deserialization=True),
-    "openfoam_tutorials_structure": FAISS.load_local(f"{DATABASE_DIR}/openfoam_tutorials_structure", OpenAIEmbeddings(model="text-embedding-3-small"), allow_dangerous_deserialization=True),
-    "openfoam_tutorials_details": FAISS.load_local(f"{DATABASE_DIR}/openfoam_tutorials_details", OpenAIEmbeddings(model="text-embedding-3-small"), allow_dangerous_deserialization=True),
-    "openfoam_command_help": FAISS.load_local(f"{DATABASE_DIR}/openfoam_command_help", OpenAIEmbeddings(model="text-embedding-3-small"), allow_dangerous_deserialization=True)
+    "openfoam_allrun_scripts": FAISS.load_local(f"{DATABASE_DIR}/openfoam_allrun_scripts", embeddings, allow_dangerous_deserialization=True),
+    "openfoam_tutorials_structure": FAISS.load_local(f"{DATABASE_DIR}/openfoam_tutorials_structure", embeddings, allow_dangerous_deserialization=True),
+    "openfoam_tutorials_details": FAISS.load_local(f"{DATABASE_DIR}/openfoam_tutorials_details", embeddings, allow_dangerous_deserialization=True),
+    "openfoam_command_help": FAISS.load_local(f"{DATABASE_DIR}/openfoam_command_help", embeddings, allow_dangerous_deserialization=True)
 }
 
 class FoamfilePydantic(BaseModel):
@@ -77,6 +80,11 @@ class LLMService:
                 self.model_version, 
                 model_provider=self.model_provider, 
                 temperature=self.temperature
+            )
+        elif self.model_provider.lower() == "deepseek":
+            self.llm = ChatDeepSeek(
+                model=self.model_version,
+                temperature=self.temperature,
             )
         elif self.model_provider.lower() == "ollama":
             try:
@@ -126,8 +134,20 @@ class LLMService:
         
         # Calculate prompt tokens
         prompt_tokens = 0
-        for message in messages:
-            prompt_tokens += self.llm.get_num_tokens(message["content"])
+        if self.model_provider.lower() == "ollama":
+            # For Ollama, use a simple approximation based on characters
+            for message in messages:
+                # Approximate token count (roughly 4 chars per token)
+                prompt_tokens += len(message["content"]) // 4
+        else:
+            try:
+                for message in messages:
+                    prompt_tokens += self.llm.get_num_tokens(message["content"])
+            except Exception as e:
+                print(f"Warning: Token counting error: {e}")
+                # Fallback approximation if tokenizer fails
+                for message in messages:
+                    prompt_tokens += len(message["content"]) // 4
         
         retry_count = 0
         while True:
@@ -148,7 +168,16 @@ class LLMService:
 
                 # Calculate completion tokens
                 response_content = str(response)
-                completion_tokens = self.llm.get_num_tokens(response_content)
+                if self.model_provider.lower() == "ollama":
+                    # For Ollama, use a simple approximation based on characters
+                    completion_tokens = len(response_content) // 4
+                else:
+                    try:
+                        completion_tokens = self.llm.get_num_tokens(response_content)
+                    except Exception as e:
+                        print(f"Warning: Token counting error: {e}")
+                        # Fallback approximation if tokenizer fails
+                        completion_tokens = len(response_content) // 4
                 total_tokens = prompt_tokens + completion_tokens
                 
                 # Update statistics

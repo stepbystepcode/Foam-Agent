@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 from langchain_community.vectorstores import FAISS
-from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
 
 def tokenize(text: str) -> str:
@@ -63,7 +63,7 @@ def main():
         ))
 
     # Step 4: Compute embeddings and store them in FAISS
-    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
+    embedding_model = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434")
     vectordb = FAISS.from_documents(documents, embedding_model)
 
     # Step 5: Save FAISS index locally
