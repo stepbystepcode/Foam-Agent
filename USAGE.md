@@ -67,7 +67,7 @@ mv bin TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/mes
 ```bash
 cat << EOF >> ~/downloads/TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/meshTool/solver_env.sh
 #! /bin/bash
-export WM_PROJECT_DIR="/home/$USER/TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/meshTool"
+export WM_PROJECT_DIR="/home/$USER/downloads/TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/meshTool"
 export OPAL_PREFIX=$WM_PROJECT_DIR/ThirdParty/linux64Gcc/openmpi-4.1.2
 export PATH=$WM_PROJECT_DIR/linux64GccDPInt32Opt/bin:$PATH
 export PATH=$WM_PROJECT_DIR/ThirdParty/linux64Gcc/openmpi-4.1.2/bin:$PATH
@@ -92,10 +92,11 @@ conda activate openfoamAgent
 
 # set up your key
 export DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# export OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # compile OpenFOAM-v2206
 cd ~/downloads/OpenFOAM-v2206
+source ./etc/bashrc
 
 # install deps
 sudo apt install m4 flex openmpi ncurses
@@ -120,6 +121,7 @@ cd output
 # source Tianluo env
 cd ~/downloads/TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/meshTool/
 source ./solver_env.sh
+ln -s ~/downloads/TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/meshTool/bin/tools/RunFunctions ~/downloads/TianLuo25.1.0-x86_64_202504291122_Linux/bin/Tools/scripts/__pycache__/meshTool/RunFunctions
 cd ~/downloads/Foam-Agent/output
 ./Allrun
 ```

@@ -1,0 +1,22 @@
+meta {
+  name: run
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:8000/api/run
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "prompt_file": "/home/lijing/downloads/input/prompt5_2.txt",
+    "case":"5"
+  }
+}

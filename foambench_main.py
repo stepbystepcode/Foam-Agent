@@ -24,6 +24,12 @@ def parse_args():
         required=True,
         help="User requirement file path for the benchmark"
     )
+    parser.add_argument(
+        '--case',
+        type=str,
+        required=False,
+        help="Case name for the benchmark"
+    )
     return parser.parse_args()
 
 def run_command(command_str):
@@ -61,10 +67,11 @@ def main():
     # Set environment variables
     WM_PROJECT_DIR = args.openfoam_path
     # Check if OPENAI_API_KEY is available in the environment
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        print("Error: OPENAI_API_KEY is not set in the environment.")
-        sys.exit(1)
+    # Change to Local Ollama!
+    # openai_api_key = os.getenv("OPENAI_API_KEY")
+    # if not openai_api_key:
+    #     print("Error: OPENAI_API_KEY is not set in the environment.")
+    #     sys.exit(1)
 
     # Create the output folder
     os.makedirs(args.output, exist_ok=True)
@@ -91,11 +98,14 @@ def main():
     if not os.path.exists(f"{script_dir}/database/faiss/openfoam_tutorials_details"):
         SCRIPTS.append(f"python database/script/faiss_tutorials_details.py --database_path=./database")
     
-    print(f"python src/main.py --prompt_path='{args.prompt_path} --output_dir='{args.output}'")
+    # Build main command with optional case parameter
+    main_cmd = f"python src/main.py --prompt_path='{args.prompt_path}' --output_dir='{args.output}'"
+    if hasattr(args, 'case') and args.case:
+        main_cmd += f" --case='{args.case}'"
+    
+    print(f"Command: {main_cmd}")
     # Main workflow
-    SCRIPTS.extend([
-        f"python src/main.py --prompt_path='{args.prompt_path}' --output_dir='{args.output}'"
-    ])
+    SCRIPTS.extend([main_cmd])
 
     print("Starting workflow...")
     for script in SCRIPTS:

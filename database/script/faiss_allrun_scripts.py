@@ -92,7 +92,7 @@ def main():
         documents.append(doc)
 
     # Step 4: Compute embeddings and store in FAISS
-    embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434")
+    embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434", num_gpu=4)
     vectordb = FAISS.from_documents(documents, embeddings)
 
     # Step 5: Save the FAISS index locally

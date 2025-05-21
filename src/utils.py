@@ -21,12 +21,16 @@ import shutil
 from config import Config
 from langchain_ollama import ChatOllama
 from langchain_deepseek.chat_models import ChatDeepSeek
+import dotenv
+
+# 加载.env文件中的环境变量
+dotenv.load_dotenv()
 
 # Global dictionary to store loaded FAISS databases
 FAISS_DB_CACHE = {}
 DATABASE_DIR = f"{Path(__file__).resolve().parent.parent}/database/faiss"
 
-embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434")
+embeddings = OllamaEmbeddings(model="nomic-embed-text", base_url="http://localhost:11434", num_gpu=4)
 
 FAISS_DB_CACHE = {
     "openfoam_allrun_scripts": FAISS.load_local(f"{DATABASE_DIR}/openfoam_allrun_scripts", embeddings, allow_dangerous_deserialization=True),
@@ -82,11 +86,18 @@ class LLMService:
                 temperature=self.temperature
             )
         elif self.model_provider.lower() == "deepseek":
+            # 从环境变量获取DEEPSEEK_API_KEY
+            deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+            if not deepseek_api_key:
+                print("警告: 未找到DEEPSEEK_API_KEY环境变量")
+            
             self.llm = ChatDeepSeek(
                 model=self.model_version,
                 temperature=self.temperature,
+                api_key=deepseek_api_key,
             )
         elif self.model_provider.lower() == "ollama":
+            print("ollama")
             try:
                 response = requests.get("http://localhost:11434/api/version", timeout=2)
                 # If request successful, service is running
@@ -102,8 +113,9 @@ class LLMService:
                 model=self.model_version, 
                 temperature=self.temperature,
                 num_predict=-1,
+                # num_ctx=4096,
                 num_ctx=131072,
-                base_url="http://localhost:11434"
+                # base_url="http://localhost:11434",
             )
         else:
             raise ValueError(f"{self.model_provider} is not a supported model_provider")

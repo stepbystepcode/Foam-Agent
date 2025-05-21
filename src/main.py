@@ -93,13 +93,28 @@ if __name__ == "__main__":
         default="",
         help="Output directory for the workflow.",
     )
+    parser.add_argument(
+        "--case",
+        type=str,
+        default=None,
+        help="Case name for the workflow.",
+    )
     
     args = parser.parse_args()
     print(args)
     
     # Initialize configuration.
     config = Config()
-    if args.output_dir != "":
+    
+    # Set the output directory if provided
+    if args.output_dir:
+        config.run_directory = args.output_dir
+        
+    # Set the case name if provided
+    if args.case:
+        config.case_dir = args.case
+    elif args.output_dir != "":
+        # Only use output_dir for case_dir if case is not provided
         config.case_dir = args.output_dir
     
     with open(args.prompt_path, 'r') as f:

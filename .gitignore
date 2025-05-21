@@ -5,6 +5,7 @@ runs/
 database/faiss
 database/raw
 output/
+input/
 benchmark/
 
 # Byte-compiled / optimized / DLL files

@@ -53,13 +53,19 @@ def architect_node(state):
     print(f"Parsed case solver: {state.case_solver}")
     
     # Step 2: Determine case directory.
+    # Always use config.run_directory as the base directory
+    # and add case_dir as a subdirectory
+    base_dir = config.run_directory
+    
     if config.case_dir != "":
-        state.case_dir = config.case_dir
+        # Use case_dir as a subdirectory name, not as a full path
+        # This ensures it's always under the output directory
+        state.case_dir = os.path.join(base_dir, config.case_dir)
     else:
         if config.run_times > 1:
-            state.case_dir = os.path.join(config.run_directory, f"{state.case_name}_{config.run_times}")
+            state.case_dir = os.path.join(base_dir, f"{state.case_name}_{config.run_times}")
         else:
-            state.case_dir = os.path.join(config.run_directory, state.case_name)
+            state.case_dir = os.path.join(base_dir, state.case_name)
     
     if os.path.exists(state.case_dir):
         print(f"Warning: Case directory {state.case_dir} already exists. Overwriting.")
