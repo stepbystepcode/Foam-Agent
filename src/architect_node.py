@@ -72,8 +72,107 @@ def architect_node(state):
         shutil.rmtree(state.case_dir)
     os.makedirs(state.case_dir)
     
-    
     print(f"Created case directory: {state.case_dir}")
+    
+    # Handle MSH file if provided
+    if hasattr(config, 'msh_file') and config.msh_file and os.path.exists(config.msh_file):
+        print(f"Processing MSH file: {config.msh_file}")
+        
+        # Create system directory if it doesn't exist
+        system_dir = os.path.join(state.case_dir, "system")
+        os.makedirs(system_dir, exist_ok=True)
+        
+        # Create a basic controlDict file if it doesn't exist
+        control_dict_path = os.path.join(system_dir, "controlDict")
+        if not os.path.exists(control_dict_path):
+            control_dict_content = """FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application     simpleFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         500;
+
+deltaT          1;
+
+writeControl    timeStep;
+
+writeInterval   50;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+functions
+{
+    forceCoeffs
+    {
+        type            forceCoeffs;
+        libs            ("libforces.so");
+        patches         ("<patches_to_monitor>");
+        rho             rhoInf;
+        rhoInf          1.0;
+        CofR            (0 0 0);
+        pitchAxis       (0 1 0);
+        magUInf         1.0;
+        lRef            1.0;
+        Aref            1.0;
+        liftDir         (0 1 0);
+        dragDir         (1 0 0);
+    }
+}
+"""
+            with open(control_dict_path, 'w') as f:
+                f.write(control_dict_content)
+            print(f"Created basic controlDict at {control_dict_path}")
+        
+        # Create mesh directory
+        mesh_dir = os.path.join(state.case_dir)
+        os.makedirs(mesh_dir, exist_ok=True)
+        
+        # Copy MSH file to mesh directory
+        msh_filename = os.path.basename(config.msh_file)
+        dest_msh = os.path.join(mesh_dir, msh_filename)
+        shutil.copy2(config.msh_file, dest_msh)
+        
+        # Run fluentMeshToFoam on the MSH file
+        print(f"Running fluentMeshToFoam on {msh_filename}")
+        fluent_cmd = f"cd {state.case_dir} && fluentMeshToFoam {msh_filename}"
+        print(fluent_cmd)
+        fluent_out = os.path.join(mesh_dir, "fluentMeshToFoam.out")
+        fluent_err = os.path.join(mesh_dir, "fluentMeshToFoam.err")
+        
+        # Run the command and check for errors
+        os.system(f"{fluent_cmd} > {fluent_out} 2> {fluent_err}")
+        
+        # Check for errors in fluentMeshToFoam
+        if os.path.exists(fluent_err) and os.path.getsize(fluent_err) > 0:
+            with open(fluent_err, 'r') as f:
+                errors = f.read().strip()
+                if errors:
+                    print(f"Warning: Errors during fluentMeshToFoam: {errors}")
+        
+        print("Mesh conversion completed")
 
     # Step 3: Retrieve a similar reference case from the FAISS databases.
     # Retrieve by case info

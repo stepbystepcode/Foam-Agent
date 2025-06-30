@@ -30,6 +30,13 @@ def parse_args():
         required=False,
         help="Case name for the benchmark"
     )
+    parser.add_argument(
+        '--msh',
+        type=str,
+        required=False,
+        help="Path to the MSH file to be used with fluentMeshToFoam"
+    )
+    
     return parser.parse_args()
 
 def run_command(command_str):
@@ -98,10 +105,12 @@ def main():
     if not os.path.exists(f"{script_dir}/database/faiss/openfoam_tutorials_details"):
         SCRIPTS.append(f"python database/script/faiss_tutorials_details.py --database_path=./database")
     
-    # Build main command with optional case parameter
+    # Build main command with optional parameters
     main_cmd = f"python src/main.py --prompt_path='{args.prompt_path}' --output_dir='{args.output}'"
     if hasattr(args, 'case') and args.case:
         main_cmd += f" --case='{args.case}'"
+    if hasattr(args, 'msh') and args.msh:
+        main_cmd += f" --msh='{args.msh}'"
     
     print(f"Command: {main_cmd}")
     # Main workflow

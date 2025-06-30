@@ -22,7 +22,16 @@ from config import Config
 from langchain_ollama import ChatOllama
 from langchain_deepseek.chat_models import ChatDeepSeek
 import dotenv
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
+from langfuse.openai import OpenAI
+langfuse = Langfuse(
+    public_key="pk-lf-937d1b70-a126-4702-9265-f8f349ae0fbc",
+    secret_key="sk-lf-e9e5be34-58e3-4418-ae0b-11fb824a556d",
+    host="https://cloud.langfuse.com"
+)
 
+langfuse_handler = CallbackHandler()
 # 加载.env文件中的环境变量
 dotenv.load_dotenv()
 
@@ -85,6 +94,7 @@ class LLMService:
                 model_provider=self.model_provider, 
                 temperature=self.temperature
             )
+
         elif self.model_provider.lower() == "deepseek":
             # 从环境变量获取DEEPSEEK_API_KEY
             deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
@@ -113,9 +123,9 @@ class LLMService:
                 model=self.model_version, 
                 temperature=self.temperature,
                 num_predict=-1,
-                # num_ctx=4096,
-                num_ctx=131072,
-                # base_url="http://localhost:11434",
+                num_ctx=40960,
+                base_url="http://10.108.201.190:11434",
+                callbacks=[langfuse_handler]
             )
         else:
             raise ValueError(f"{self.model_provider} is not a supported model_provider")

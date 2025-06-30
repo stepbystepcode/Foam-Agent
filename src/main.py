@@ -99,6 +99,12 @@ if __name__ == "__main__":
         default=None,
         help="Case name for the workflow.",
     )
+    parser.add_argument(
+        "--msh",
+        type=str,
+        default=None,
+        help="Path to MSH file for fluentMeshToFoam",
+    )
     
     args = parser.parse_args()
     print(args)
@@ -116,6 +122,10 @@ if __name__ == "__main__":
     elif args.output_dir != "":
         # Only use output_dir for case_dir if case is not provided
         config.case_dir = args.output_dir
+        
+    # Set the MSH file path if provided
+    if args.msh:
+        config.msh_file = args.msh
     
     with open(args.prompt_path, 'r') as f:
         user_requirement = f.read()

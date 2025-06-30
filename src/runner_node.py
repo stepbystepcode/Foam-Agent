@@ -28,17 +28,24 @@ def runner_node(state):
     remove_file(out_file)
     remove_numeric_folders(case_dir)
     
-    # Execute the Allrun script.
-    run_command(allrun_file_path, out_file, err_file, case_dir, config)
-    
-    # Check for errors.
-    state.error_logs = check_foam_errors(case_dir)
-
-    if len(state.error_logs) > 0:
-        print("Errors detected in the Allrun execution.")
-        print(state.error_logs)
-        return {"goto": "reviewer"}
+    # Execute the Allrun script if it exists
+    if os.path.exists(allrun_file_path):
+        run_command(allrun_file_path, out_file, err_file, case_dir, config)
     else:
-        print("Allrun executed successfully without errors.")
+        print("No Allrun script found. Continuing without it.")
+    
+    # Check for errors if Allrun was executed
+    if os.path.exists(allrun_file_path):
+        state.error_logs = check_foam_errors(case_dir)
+
+        if len(state.error_logs) > 0:
+            print("Errors detected in the Allrun execution.")
+            print(state.error_logs)
+            return {"goto": "reviewer"}
+        else:
+            print("Allrun executed successfully without errors.")
+            return {"goto": "end"}
+    else:
+        print("No Allrun script to execute. Workflow completed.")
         return {"goto": "end"}
         
